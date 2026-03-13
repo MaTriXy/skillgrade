@@ -1,10 +1,10 @@
-# Skill Eval
+# Skillgrade
 
-Evaluation framework for [Agent Skills](https://agentskills.io/home). Tests that AI agents correctly discover and use your skills.
+The easiest way to evaluate your [Agent Skills](https://agentskills.io/home). Tests that AI agents correctly discover and use your skills.
 
 See [examples/](examples/) — [superlint](examples/superlint/) (simple) and [angular-modern](examples/angular-modern/) (TypeScript grader).
 
-![CLI Preview](assets/cli-preview.png)
+![CLI Preview](https://raw.githubusercontent.com/mgechev/skillgrade/main/assets/cli-preview.png)
 
 ## Quick Start
 

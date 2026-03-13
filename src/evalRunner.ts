@@ -361,6 +361,5 @@ export class EvalRunner {
         const filePath = path.join(this.logDir, fileName);
 
         await fs.writeJSON(filePath, report, { spaces: 2 });
-        console.log(`    ${fmt.dim('saved')} ${fileName}`);
     }
 }

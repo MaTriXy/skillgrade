@@ -179,20 +179,10 @@ export async function runEvals(dir: string, opts: RunOptions) {
                 const report = await runner.runEval(agent, tmpTaskDir, skillsPaths, evalOpts, trials, env, parallel);
                 reports.push(report);
 
-                // Per-trial rows
-                for (const t of report.trials) {
-                    trialRow(
-                        t.trial_id, trials, t.reward,
-                        (t.duration_ms / 1000).toFixed(1) + 's',
-                        t.n_commands,
-                        t.grader_results.map(g => ({ type: g.grader_type, score: g.score }))
-                    );
-                }
-
                 // LLM grader reasoning (condensed)
                 for (const trial of report.trials) {
                     for (const g of trial.grader_results.filter(g => g.grader_type === 'llm_rubric')) {
-                        console.log(`\n    ${fmt.dim(`trial ${trial.trial_id} llm_rubric:`)} ${g.details.substring(0, 120)}`);
+                        console.log(`    ${fmt.dim(`trial ${trial.trial_id} llm_rubric:`)} ${g.details.substring(0, 120)}`);
                     }
                 }
 
