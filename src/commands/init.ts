@@ -217,6 +217,7 @@ tasks:
         weight: 0.3`;
 
   let text: string;
+  const fetchOpts = { signal: AbortSignal.timeout(120_000) };
 
   if (provider === 'anthropic') {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -232,6 +233,7 @@ tasks:
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
       }),
+      ...fetchOpts,
     });
 
     if (!response.ok) {
@@ -254,6 +256,7 @@ tasks:
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
       }),
+      ...fetchOpts,
     });
 
     if (!response.ok) {
@@ -271,6 +274,7 @@ tasks:
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.3 },
       }),
+      ...fetchOpts,
     });
 
     if (!response.ok) {
