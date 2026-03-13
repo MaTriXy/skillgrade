@@ -5,6 +5,7 @@
  */
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import * as os from 'os';
 import { loadEvalConfig, resolveTask } from '../core/config';
 import { detectSkills } from '../core/skills';
 import { DockerProvider } from '../providers/docker';
@@ -77,14 +78,14 @@ export async function runEvals(dir: string, opts: RunOptions) {
     if (opts.task) {
         tasksToRun = config.tasks.filter(t => t.name === opts.task);
         if (tasksToRun.length === 0) {
-            console.error(`  ❌ Task "${opts.task}" not found in eval.yaml`);
+        console.error(`  ❌ Task "${opts.task}" not found in eval.yaml`);
             console.log(`  Available tasks: ${config.tasks.map(t => t.name).join(', ')}`);
-            process.exit(1);
+            throw new Error(`Task "${opts.task}" not found`);
         }
     }
 
     // Output directory
-    const outputBase = opts.output || path.join(require('os').tmpdir(), 'skilleval');
+    const outputBase = opts.output || path.join(os.tmpdir(), 'skilleval');
     const skillName = path.basename(dir);
     const outputDir = path.join(outputBase, skillName);
     const resultsDir = path.join(outputDir, 'results');
@@ -220,7 +221,7 @@ export async function runEvals(dir: string, opts: RunOptions) {
         const threshold = opts.threshold ?? config.defaults.threshold;
         if (!allPassed) {
             console.error(`\n  ❌ CI check failed (threshold: ${(threshold * 100).toFixed(0)}%)\n`);
-            process.exit(1);
+            throw new Error('CI check failed');
         }
         console.log(`\n  ✅ CI check passed (threshold: ${(threshold * 100).toFixed(0)}%)\n`);
     }

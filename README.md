@@ -19,6 +19,7 @@ npm i -g skilleval
 ```bash
 cd my-skill/
 GEMINI_API_KEY=your-key skilleval init    # or ANTHROPIC_API_KEY
+# Use --force to overwrite an existing eval.yaml
 ```
 
 Generates `eval.yaml` with AI-powered tasks and graders. Without an API key, creates a well-commented template.

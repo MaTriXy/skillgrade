@@ -2,14 +2,12 @@ import * as http from 'http';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
-const PORT = 3847;
-
-export async function runBrowserPreview(resultsDir: string) {
+export async function runBrowserPreview(resultsDir: string, port: number = 3847) {
     const resolved = path.resolve(resultsDir);
     const htmlPath = path.join(__dirname, '..', 'viewer.html');
 
     const server = http.createServer(async (req, res) => {
-        const url = new URL(req.url || '/', `http://localhost:${PORT}`);
+        const url = new URL(req.url || '/', `http://localhost:${port}`);
 
         if (url.pathname === '/api/reports') {
             const files = (await fs.readdir(resolved)).filter(f => f.endsWith('.json')).reverse();
@@ -40,8 +38,10 @@ export async function runBrowserPreview(resultsDir: string) {
         }
     });
 
-    server.listen(PORT, () => {
-        console.log(`📊 Skill Eval Viewer → http://localhost:${PORT}`);
+    server.listen(port, () => {
+        const addr = server.address() as any;
+        const actualPort = typeof addr === 'object' ? addr.port : port;
+        console.log(`📊 Skill Eval Viewer → http://localhost:${actualPort}`);
         console.log(`   Serving from: ${resolved}`);
     });
 }

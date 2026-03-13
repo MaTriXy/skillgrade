@@ -102,7 +102,7 @@ function printHelp() {
 
   Usage:
     skilleval                     Run all tasks from eval.yaml
-    skilleval init                Generate eval.yaml from detected skills
+    skilleval init [--force]      Generate eval.yaml (--force to overwrite)
     skilleval preview [browser]   View results (CLI default, or browser)
     skilleval <task-name>         Run a specific task
 
@@ -114,6 +114,8 @@ function printHelp() {
   Options:
     --trials=N         Override trial count (overrides preset)
     --parallel=N       Run trials concurrently
+    --agent=gemini|claude   Override agent (default: auto-detect from API key)
+    --provider=docker|local Override provider (default: docker)
     --output=DIR       Output directory for reports and temp files
                        Default: $TMPDIR/skilleval
     --validate         Verify graders using reference solutions
@@ -123,6 +125,7 @@ function printHelp() {
 
   Examples:
     skilleval init                # scaffold eval.yaml
+    skilleval init --force        # overwrite existing eval.yaml
     skilleval                     # run all evals
     skilleval --smoke             # quick 5-trial smoke test
     skilleval --regression --ci   # CI regression with 30 trials

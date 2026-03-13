@@ -18,7 +18,7 @@ export async function runInit(dir: string, opts: { force?: boolean } = {}) {
       await fs.remove(evalPath);
     } else {
       console.error('  eval.yaml already exists. Use --force to overwrite.');
-      process.exit(1);
+      throw new Error('eval.yaml already exists');
     }
   }
 
