@@ -179,7 +179,7 @@ Respond with ONLY a JSON object: {"score": <number>, "reasoning": "<brief explan
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { temperature: 0, maxOutputTokens: 1024 }
+                    generationConfig: { temperature: 0 }
                 })
             });
 
@@ -203,7 +203,7 @@ Respond with ONLY a JSON object: {"score": <number>, "reasoning": "<brief explan
                 },
                 body: JSON.stringify({
                     model,
-                    max_tokens: 1024,
+                    max_tokens: 4096,
                     messages: [{ role: 'user', content: prompt }]
                 })
             });
@@ -218,8 +218,11 @@ Respond with ONLY a JSON object: {"score": <number>, "reasoning": "<brief explan
 
     private parseResponse(text: string, config: GraderConfig): GraderResult {
         try {
-            // Extract JSON from response (may have markdown wrapping)
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            // Strip markdown code fences if present
+            let cleaned = text.replace(/```(?:json)?\s*/g, '').replace(/```/g, '').trim();
+
+            // Extract JSON from response
+            const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 const parsed = JSON.parse(jsonMatch[0]);
                 const score = Math.max(0, Math.min(1, parseFloat(parsed.score) || 0));
@@ -231,9 +234,19 @@ Respond with ONLY a JSON object: {"score": <number>, "reasoning": "<brief explan
                 };
             }
         } catch (e) {
-            // Fall through
+            // JSON parse failed — try to extract score from truncated response
+            const scoreMatch = text.match(/"score"\s*:\s*([\d.]+)/);
+            if (scoreMatch) {
+                const score = Math.max(0, Math.min(1, parseFloat(scoreMatch[1]) || 0));
+                return {
+                    grader_type: 'llm_rubric',
+                    score,
+                    weight: config.weight,
+                    details: 'Parsed score from truncated LLM response'
+                };
+            }
         }
-        return { grader_type: 'llm_rubric', score: 0, weight: config.weight, details: `Failed to parse LLM response: ${text}` };
+        return { grader_type: 'llm_rubric', score: 0, weight: config.weight, details: `Failed to parse LLM response: ${text.substring(0, 200)}` };
     }
 }
 
