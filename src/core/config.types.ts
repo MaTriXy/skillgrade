@@ -28,6 +28,12 @@ export interface DockerConfig {
     setup?: string;     // extra RUN commands for Dockerfile
 }
 
+/** Environment resource limits */
+export interface EnvironmentConfig {
+    cpus: number;
+    memory_mb: number;
+}
+
 /** Single eval task */
 export interface EvalTaskConfig {
     name: string;
@@ -41,17 +47,21 @@ export interface EvalTaskConfig {
     provider?: string;
     trials?: number;
     timeout?: number;
+    grader_model?: string;
     docker?: DockerConfig;
+    environment?: Partial<EnvironmentConfig>;
 }
 
 /** Top-level defaults */
 export interface EvalDefaults {
-    agent: string;      // 'gemini' | 'claude'
+    agent: string;      // 'gemini' | 'claude' | 'codex'
     provider: string;   // 'docker' | 'local'
     trials: number;
     timeout: number;
     threshold: number;  // for --ci mode
+    grader_model?: string;  // default LLM grader model
     docker: DockerConfig;
+    environment: EnvironmentConfig;
 }
 
 /** Top-level eval.yaml */
@@ -73,7 +83,9 @@ export interface ResolvedTask {
     provider: string;
     trials: number;
     timeout: number;
+    grader_model?: string;  // inherited default model for LLM graders
     docker: DockerConfig;
+    environment: EnvironmentConfig;
 }
 
 export interface ResolvedGrader {

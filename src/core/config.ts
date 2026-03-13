@@ -10,6 +10,7 @@ import {
     ResolvedTask,
     ResolvedGrader,
     WorkspaceMapping,
+    EnvironmentConfig,
 } from './config.types';
 
 // We use a simple YAML parser — js-yaml is the standard
@@ -23,6 +24,10 @@ const DEFAULT_CONFIG: EvalDefaults = {
     threshold: 0.8,
     docker: {
         base: 'node:20-slim',
+    },
+    environment: {
+        cpus: 2,
+        memory_mb: 2048,
     },
 };
 
@@ -64,6 +69,10 @@ function validateConfig(raw: any): EvalConfig {
         docker: {
             ...DEFAULT_CONFIG.docker,
             ...(raw.defaults?.docker || {}),
+        },
+        environment: {
+            ...DEFAULT_CONFIG.environment,
+            ...(raw.defaults?.environment || {}),
         },
     };
 
@@ -130,6 +139,11 @@ export async function resolveTask(
         ...defaults.docker,
         ...(task.docker || {}),
     };
+    const environment: EnvironmentConfig = {
+        ...defaults.environment,
+        ...(task.environment || {}),
+    };
+    const grader_model = task.grader_model || defaults.grader_model;
 
     // Resolve instruction — could be inline text or file path
     const instruction = await resolveFileOrInline(task.instruction, baseDir);
@@ -168,7 +182,9 @@ export async function resolveTask(
         provider,
         trials,
         timeout,
+        grader_model,
         docker,
+        environment,
     };
 }
 

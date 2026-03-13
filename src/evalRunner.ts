@@ -51,6 +51,8 @@ export interface EvalRunOptions {
     instruction: string;
     graders: ResolvedGrader[];
     timeoutSec: number;
+    graderModel?: string;       // default LLM grader model
+    graderTimeoutSec?: number;  // timeout per grader (default: 120s)
     environment: {
         cpus: number;
         memory_mb: number;
@@ -220,10 +222,16 @@ export class EvalRunner {
                     rubric: graderDef.type === 'llm_rubric'
                         ? `prompts/${llmIndex === 0 ? 'quality.md' : `quality_${llmIndex}.md`}`
                         : undefined,
-                    model: graderDef.model,
+                    model: graderDef.model || opts.graderModel,
                     weight: graderDef.weight,
                 };
-                const result = await grader.grade(workspace, this.provider, graderConfig, taskPath, sessionLog, env);
+
+                const graderTimeoutMs = (opts.graderTimeoutSec ?? 120) * 1000;
+                const result = await withTimeout(
+                    grader.grade(workspace, this.provider, graderConfig, taskPath, sessionLog, env),
+                    graderTimeoutMs,
+                    `Grader ${graderDef.type} (limit: ${opts.graderTimeoutSec ?? 120}s)`
+                );
                 graderResults.push(result);
 
                 sessionLog.push({

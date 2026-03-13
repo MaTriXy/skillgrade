@@ -114,7 +114,7 @@ function printHelp() {
   Options:
     --trials=N         Override trial count (overrides preset)
     --parallel=N       Run trials concurrently
-    --agent=gemini|claude   Override agent (default: auto-detect from API key)
+    --agent=gemini|claude|codex   Override agent (default: auto-detect from API key)
     --provider=docker|local Override provider (default: docker)
     --output=DIR       Output directory for reports and temp files
                        Default: $TMPDIR/skilleval

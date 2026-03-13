@@ -32,7 +32,7 @@ Generates `eval.yaml` with AI-powered tasks and graders. Without an API key, cre
 GEMINI_API_KEY=your-key skilleval --smoke
 ```
 
-The agent is auto-detected from your API key: `GEMINI_API_KEY` → Gemini, `ANTHROPIC_API_KEY` → Claude. Override with `--agent=claude`.
+The agent is auto-detected from your API key: `GEMINI_API_KEY` → Gemini, `ANTHROPIC_API_KEY` → Claude, `OPENAI_API_KEY` → Codex. Override with `--agent=claude`.
 
 **4. Review**:
 
@@ -57,7 +57,7 @@ Reports are saved to `$TMPDIR/skilleval/<skill-name>/results/`. Override with `-
 |------|-------------|
 | `--trials=N` | Override trial count |
 | `--parallel=N` | Run trials concurrently |
-| `--agent=gemini\|claude` | Override agent (default: auto-detect from API key) |
+| `--agent=gemini\|claude\|codex` | Override agent (default: auto-detect from API key) |
 | `--provider=docker\|local` | Override provider |
 | `--output=DIR` | Output directory (default: `$TMPDIR/skilleval`) |
 | `--validate` | Verify graders using reference solutions |
@@ -74,15 +74,19 @@ version: "1"
 # skill: path/to/my-skill
 
 defaults:
-  agent: gemini          # gemini | claude
+  agent: gemini          # gemini | claude | codex
   provider: docker       # docker | local
   trials: 5
   timeout: 300           # seconds
   threshold: 0.8         # for --ci mode
+  grader_model: gemini-3-flash-preview  # default LLM grader model
   docker:
     base: node:20-slim
     setup: |             # extra commands run during image build
       apt-get update && apt-get install -y jq
+  environment:           # container resource limits
+    cpus: 2
+    memory_mb: 2048
 
 tasks:
   - name: fix-linting-errors
@@ -218,6 +222,7 @@ Exits with code 1 if pass rate falls below `--threshold` (default: 0.8).
 |----------|---------|
 | `GEMINI_API_KEY` | Agent execution, LLM grading, `skilleval init` |
 | `ANTHROPIC_API_KEY` | Agent execution, LLM grading, `skilleval init` |
+| `OPENAI_API_KEY` | Agent execution (Codex) |
 
 Variables are also loaded from `.env` in the skill directory. Shell values override `.env`. All values are **redacted** from persisted session logs.
 

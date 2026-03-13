@@ -170,7 +170,7 @@ Respond with ONLY a JSON object: {"score": <number>, "reasoning": "<brief explan
     }
 
     private async callGemini(prompt: string, apiKey: string, config: GraderConfig): Promise<GraderResult> {
-        const model = config.model || 'gemini-2.0-flash';
+        const model = config.model || 'gemini-3-flash-preview';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
         try {

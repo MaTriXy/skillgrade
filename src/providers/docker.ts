@@ -185,25 +185,32 @@ export class DockerProvider implements EnvironmentProvider {
             Cmd: ['/bin/bash', '-c', command],
             AttachStdout: true,
             AttachStderr: true,
-            Tty: true,
+            Tty: false,
             Env: envPairs
         });
 
-        const stream = await exec.start({ Tty: true });
-        const output = await new Promise<string>((resolve, reject) => {
-            let data = '';
-            stream.on('data', (chunk: Buffer) => {
-                data += chunk.toString();
-            });
-            stream.on('end', () => resolve(data));
+        const stream = await exec.start({});
+
+        const { stdout, stderr } = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
+            let stdoutData = '';
+            let stderrData = '';
+            const stdoutStream = new (require('stream').PassThrough)();
+            const stderrStream = new (require('stream').PassThrough)();
+
+            stdoutStream.on('data', (chunk: Buffer) => { stdoutData += chunk.toString(); });
+            stderrStream.on('data', (chunk: Buffer) => { stderrData += chunk.toString(); });
+
+            this.docker.modem.demuxStream(stream, stdoutStream, stderrStream);
+
+            stream.on('end', () => resolve({ stdout: stdoutData, stderr: stderrData }));
             stream.on('error', (err: Error) => reject(err));
         });
 
         const result = await exec.inspect();
 
         return {
-            stdout: output,
-            stderr: '',
+            stdout,
+            stderr,
             exitCode: result.ExitCode ?? 0
         };
     }
@@ -235,7 +242,7 @@ export class DockerProvider implements EnvironmentProvider {
         };
 
         await runDiag('Processes', 'ps aux 2>/dev/null || cat /proc/[0-9]*/cmdline 2>/dev/null | tr "\\0" " "');
-        await runDiag('Open files (gemini)', 'ls -la /proc/$(pgrep -f gemini | head -1)/fd 2>/dev/null || echo "no gemini process"');
+        await runDiag('Open files (agent)', 'ls -la /proc/$(pgrep -f "gemini|claude|codex" | head -1)/fd 2>/dev/null || echo "no agent process"');
         await runDiag('Network connections', 'cat /proc/net/tcp 2>/dev/null | head -20 || echo "no /proc/net/tcp"');
         await runDiag('Memory', 'cat /proc/meminfo 2>/dev/null | head -5 || echo "no meminfo"');
         await runDiag('Disk', 'df -h /workspace 2>/dev/null || echo "no df"');

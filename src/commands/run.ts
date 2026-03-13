@@ -11,8 +11,7 @@ import { detectSkills } from '../core/skills';
 import { DockerProvider } from '../providers/docker';
 import { LocalProvider } from '../providers/local';
 import { EvalRunner, EvalRunOptions } from '../evalRunner';
-import { GeminiAgent } from '../agents/gemini';
-import { ClaudeAgent } from '../agents/claude';
+import { createAgent } from '../agents/registry';
 import { BaseAgent, EvalReport } from '../types';
 import { ResolvedTask } from '../core/config.types';
 import { parseEnvFile } from '../utils/env';
@@ -46,6 +45,7 @@ export async function runEvals(dir: string, opts: RunOptions) {
     const env: Record<string, string> = { ...rootEnv };
     if (process.env.GEMINI_API_KEY) env.GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     if (process.env.ANTHROPIC_API_KEY) env.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+    if (process.env.OPENAI_API_KEY) env.OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
     if (Object.keys(rootEnv).length > 0) {
         console.log(`  Loaded .env: ${Object.keys(rootEnv).join(', ')}`);
@@ -78,7 +78,7 @@ export async function runEvals(dir: string, opts: RunOptions) {
     if (opts.task) {
         tasksToRun = config.tasks.filter(t => t.name === opts.task);
         if (tasksToRun.length === 0) {
-        console.error(`  ❌ Task "${opts.task}" not found in eval.yaml`);
+            console.error(`  ❌ Task "${opts.task}" not found in eval.yaml`);
             console.log(`  Available tasks: ${config.tasks.map(t => t.name).join(', ')}`);
             throw new Error(`Task "${opts.task}" not found`);
         }
@@ -111,19 +111,22 @@ export async function runEvals(dir: string, opts: RunOptions) {
             instruction: resolved.instruction,
             graders: resolved.graders,
             timeoutSec: resolved.timeout,
-            environment: {
-                cpus: 2,
-                memory_mb: 2048,
-            },
+            graderModel: resolved.grader_model,
+            environment: resolved.environment,
         };
 
         // Pick agent: CLI flag > task-level override > auto-detect from API key > default
         let agentName = opts.agent || resolved.agent;
         if (!opts.agent && !taskDef.agent) {
-            if (env.ANTHROPIC_API_KEY && !env.GEMINI_API_KEY) {
-                agentName = 'claude';
-            } else if (env.GEMINI_API_KEY && !env.ANTHROPIC_API_KEY) {
-                agentName = 'gemini';
+            // No explicit override — auto-detect from available API keys
+            const hasGemini = !!env.GEMINI_API_KEY;
+            const hasAnthropic = !!env.ANTHROPIC_API_KEY;
+            const hasOpenAI = !!env.OPENAI_API_KEY;
+            const keyCount = [hasGemini, hasAnthropic, hasOpenAI].filter(Boolean).length;
+            if (keyCount === 1) {
+                if (hasAnthropic) agentName = 'claude';
+                else if (hasOpenAI) agentName = 'codex';
+                else if (hasGemini) agentName = 'gemini';
             }
         }
         const providerName = opts.provider || resolved.provider;
@@ -168,7 +171,7 @@ export async function runEvals(dir: string, opts: RunOptions) {
             if (!passed) allPassed = false;
         } else {
             // Normal eval mode
-            const agent = agentName === 'claude' ? new ClaudeAgent() : new GeminiAgent();
+            const agent = createAgent(agentName);
 
             console.log(`\n  🚀 ${resolved.name} | agent=${agentName} provider=${providerName} trials=${trials}${parallel > 1 ? ` parallel=${parallel}` : ''}\n`);
 
@@ -280,6 +283,8 @@ async function prepareTempTaskDir(resolved: ResolvedTask, baseDir: string, tmpDi
         dockerfileContent += `RUN npm install -g @google/gemini-cli\n\n`;
     } else if (resolved.agent === 'claude') {
         dockerfileContent += `RUN npm install -g @anthropic-ai/claude-code\n\n`;
+    } else if (resolved.agent === 'codex') {
+        dockerfileContent += `RUN npm install -g @openai/codex\n\n`;
     }
 
     // Docker setup commands
