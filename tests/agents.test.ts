@@ -80,8 +80,8 @@ describe('ClaudeAgent', () => {
     expect(commands[0]).toContain('base64');
     expect(commands[0]).toContain('/tmp/.prompt.md');
     expect(commands[1]).toContain('claude');
-    expect(commands[1]).toContain('--yes');
-    expect(commands[1]).toContain('--no-auto-update');
+    expect(commands[1]).toContain('-p');
+    expect(commands[1]).toContain('--dangerously-skip-permissions');
     expect(result).toContain('output');
   });
 
